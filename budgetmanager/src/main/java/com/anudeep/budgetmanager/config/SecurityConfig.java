@@ -13,10 +13,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.anudeep.budgetmanager.security.JwtRequestFilter;
 import com.anudeep.budgetmanager.service.AppUserDetailsService;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
     
 
+    private final JwtRequestFilter jwtRequestFilter;
     private final AppUserDetailsService appUserDetailsService;
 
     @Bean
@@ -38,7 +41,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .httpBasic(Customizer.withDefaults());
+            .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+            
             
         return http.build();
 
@@ -64,6 +68,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(){
         DaoAuthenticationProvider authenticationProvider=new DaoAuthenticationProvider();
         authenticationProvider.setUserDetailsService(appUserDetailsService);
+        authenticationProvider.setPasswordEncoder(passwordEncoder());
         return new ProviderManager(authenticationProvider);
     }
 }

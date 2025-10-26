@@ -18,17 +18,17 @@ public class EmailService {
 
     public void sendEmail(String to,String subject,String body){
 
-        // Implementation for sending email
-        try {
-            SimpleMailMessage message=new SimpleMailMessage();
+        try{
+            SimpleMessage message=new SimpleMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
             mailSender.send(message);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
 
+        }
+        catch(Exception e){
+            throw new RuntimeException("Failed to send email");
+        }
     }
 }
