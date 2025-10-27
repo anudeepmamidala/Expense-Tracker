@@ -13,22 +13,19 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.properties.mail.smtp.from}")
+    @Value("${spring.mail.username}") 
     private String fromEmail;
 
-    public void sendEmail(String to,String subject,String body){
-
-        try{
-            SimpleMessage message=new SimpleMessage();
+    public void sendEmail(String to, String subject, String body) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
             mailSender.send(message);
-
-        }
-        catch(Exception e){
-            throw new RuntimeException("Failed to send email");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
         }
     }
 }
