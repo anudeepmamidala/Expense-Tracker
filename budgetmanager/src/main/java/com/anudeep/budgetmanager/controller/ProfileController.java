@@ -38,6 +38,7 @@ public class ProfileController {
         }
     }
 
+    @PostMapping("/login")
     public ResponseEntity<Map<String,Object>> login(@RequestBody AuthDTO authDTO) {
         // Authentication logic here
         try {

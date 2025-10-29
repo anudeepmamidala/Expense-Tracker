@@ -1,8 +1,10 @@
 package com.anudeep.budgetmanager.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.anudeep.budgetmanager.dto.ExpenseDTO;
@@ -12,7 +14,6 @@ import com.anudeep.budgetmanager.entity.ExpenseEntity;
 import com.anudeep.budgetmanager.entity.IncomeEntity;
 import com.anudeep.budgetmanager.entity.ProfileEntity;
 import com.anudeep.budgetmanager.repository.CategoryRepository;
-import com.anudeep.budgetmanager.repository.ExpenseRepository;
 import com.anudeep.budgetmanager.repository.IncomeRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -40,7 +41,7 @@ public class IncomeService {
 
 
 
-    public List<IncomeDTO> getCurrentMonthExpensesForCurrentUser(){
+    public List<IncomeDTO> getCurrentMonthIncomesForCurrentUser(){
         ProfileEntity profile= profileService.getCurrentProfile();
         LocalDate now=LocalDate.now();
 
@@ -62,6 +63,24 @@ public class IncomeService {
         incomeRepository.delete(entity);
     }
 
+    public List<IncomeDTO> getLatest5IncomesForCurrentUser(){
+        ProfileEntity profile=profileService.getCurrentProfile();
+        List<IncomeEntity> list=incomeRepository.findByProfileIdOrderByDateDesc(profile.getId());
+        return list.stream().map(this::toDTO).toList();
+    }
+
+    public BigDecimal getTotalIncomeForCurrentUser(){
+        ProfileEntity profile=profileService.getCurrentProfile();
+        BigDecimal total= incomeRepository.findTotalExpenseByProfileId(profile.getId());
+        return total!=null?total:BigDecimal.ZERO;
+    }
+
+
+    public List<IncomeDTO> filterIncomes(LocalDate startDate,LocalDate endDate,String keyword,Sort sort){
+        ProfileEntity profile=profileService.getCurrentProfile();
+        List<IncomeEntity> list=incomeRepository.findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(profile.getId(), startDate, endDate, keyword, sort);
+        return list.stream().map(this::toDTO).toList();
+    }
 
     public IncomeEntity toEntity(IncomeDTO dto,ProfileEntity profile,CategoryEntity category){
 

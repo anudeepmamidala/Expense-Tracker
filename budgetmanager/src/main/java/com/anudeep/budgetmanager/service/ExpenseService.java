@@ -1,10 +1,12 @@
 package com.anudeep.budgetmanager.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 import javax.management.RuntimeErrorException;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.anudeep.budgetmanager.dto.ExpenseDTO;
@@ -64,6 +66,32 @@ public class ExpenseService {
         expenseRepository.delete(entity);
     }
 
+    public List<ExpenseDTO> getLatest5ExpensesForCurrentUser(){
+        ProfileEntity profile=profileService.getCurrentProfile();
+        List<ExpenseEntity> list=expenseRepository.findByProfileIdOrderByDateDesc(profile.getId());
+        return list.stream().map(this::toDTO).toList();
+    }
+
+
+
+    public BigDecimal getTotalExpenseForCurrentUser(){
+        ProfileEntity profile=profileService.getCurrentProfile();
+        BigDecimal total= expenseRepository.findTotalExpenseByProfileId(profile.getId());
+        return total!=null?total:BigDecimal.ZERO;
+    }
+
+
+    public List<ExpenseDTO> filterExpenses(LocalDate startDate,LocalDate endDate,String keyword,Sort sort){
+        ProfileEntity profile=profileService.getCurrentProfile();
+        List<ExpenseEntity> list=expenseRepository.findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(profile.getId(), startDate, endDate, keyword, sort);
+        return list.stream().map(this::toDTO).toList();
+    }
+
+
+    public List<ExpenseDTO> getExpensesForUserOnDate(Long profileId,LocalDate date){
+        List<ExpenseEntity> list =expenseRepository.findByProfileIdAndDate(profileId, date);
+        return list.stream().map(this::toDTO).toList();
+    }
     public ExpenseEntity toEntity(ExpenseDTO dto,ProfileEntity profile,CategoryEntity category){
 
         return ExpenseEntity.builder()
