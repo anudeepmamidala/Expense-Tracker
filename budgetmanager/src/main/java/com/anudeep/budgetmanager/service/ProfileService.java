@@ -33,7 +33,7 @@ public class ProfileService {
         newProfile.setActivationToken(UUID.randomUUID().toString());
         newProfile = profileRepository.save(newProfile);
 
-        String activationLink = "http://localhost:8080/activate?token=" + newProfile.getActivationToken();
+        String activationLink = "http://localhost:8080/api/v1.0/activate?token=" + newProfile.getActivationToken();
         String subject = "Activate your FinTrack Account";
         String body = "Click here to activate your account: " + activationLink;
         emailService.sendEmail(newProfile.getEmail(), subject, body);

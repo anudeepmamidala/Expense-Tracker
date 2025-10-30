@@ -1,6 +1,9 @@
 package com.anudeep.budgetmanager.service;
 
 import java.util.Collections;
+import java.util.List; // 👈 1. Add this import
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,10 +27,13 @@ public class AppUserDetailsService implements UserDetailsService {
         
         ProfileEntity existingProfile = profileRepository.findByEmail(email)
         .orElseThrow(()-> new UsernameNotFoundException("Profile not dound with email"));
+        
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        
         return User.builder()
         .username(existingProfile.getEmail())
         .password(existingProfile.getPassword())
-        .authorities(Collections.emptyList())
+        .authorities(authorities)
         .build(); //roles/authorities
     }
 }

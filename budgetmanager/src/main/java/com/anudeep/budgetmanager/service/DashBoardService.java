@@ -28,11 +28,9 @@ public class DashBoardService {
         ProfileEntity profile = profileService.getCurrentProfile();
         Map<String, Object> returnValue = new LinkedHashMap<>();
 
-        // Fetch latest 5 records
         List<IncomeDTO> latestIncomes = incomeService.getLatest5IncomesForCurrentUser();
         List<ExpenseDTO> latestExpenses = expenseService.getLatest5ExpensesForCurrentUser();
 
-        // Combine into unified recent transaction list
         List<RecentTransactionDTO> recentTransactions = Stream.concat(
                 latestIncomes.stream().map(income ->
                         RecentTransactionDTO.builder()

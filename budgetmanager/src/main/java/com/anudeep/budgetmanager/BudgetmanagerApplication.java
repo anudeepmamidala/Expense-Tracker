@@ -19,8 +19,8 @@ public class BudgetmanagerApplication {
 	@Bean
 public CommandLineRunner testEmail(EmailService emailService) {
     return args -> {
-        emailService.sendEmail("saianudeepmamidala@gmail.com", "Test Email", "This is a test email!");
-        System.out.println("Email sent!");
+        emailService.sendEmail("saianudeepmamidala@gmail.com", "Test Email", "This is a another test email!");
+        System.out.println("Email already sent!");
     };
 }
 
