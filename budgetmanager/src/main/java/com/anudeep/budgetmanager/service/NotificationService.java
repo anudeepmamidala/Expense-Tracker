@@ -47,9 +47,7 @@ public class NotificationService {
 
         }
     }
-    // ... in public class NotificationService ...
-
-    @Scheduled(cron = "0 * * * * *", zone = "Asia/Kolkata")
+    @Scheduled(cron = "0 0 22 * * *", zone = "Asia/Kolkata")
     public void sendDailyExpenseSummary() {
         log.info("Job started: sendDailyExpenseSummary");
         List<ProfileEntity> profiles = profileRepository.findAll();
@@ -57,7 +55,7 @@ public class NotificationService {
 
         for (ProfileEntity profile : profiles) {
             try {
-                // This method must exist in your ExpenseService
+                
                 List<ExpenseDTO> todaysExpenses = expenseService.getExpensesForUserOnDate(profile.getId(), today);
                 
                 StringBuilder body = new StringBuilder();
