@@ -9,7 +9,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class IncomeDTO {
     
     private Long id;
+    private Long profileId;  // ✅ ADDED
     private String name;
     private String icon;
     private String categoryName;

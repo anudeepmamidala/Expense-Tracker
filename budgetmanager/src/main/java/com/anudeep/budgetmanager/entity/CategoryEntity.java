@@ -32,9 +32,11 @@ public class CategoryEntity {
     private Long id;
 
     private String name;
+    
     @Column(updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
+    
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 

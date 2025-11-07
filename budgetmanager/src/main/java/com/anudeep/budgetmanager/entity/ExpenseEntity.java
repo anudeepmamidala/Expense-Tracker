@@ -22,9 +22,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
-
-
 @Entity
 @Data
 @Table(name = "expenses")
@@ -46,18 +43,18 @@ public class ExpenseEntity {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id",nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
     private CategoryEntity category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_id",nullable = false)
+    @JoinColumn(name = "profile_id", nullable = false)
     private ProfileEntity profile;
     
     @PrePersist
     public void prePersist(){
-        if(this.date==null){
-            this.date=LocalDate.now();
+        if(this.date == null){
+            this.date = LocalDate.now();
         }
     }
 }

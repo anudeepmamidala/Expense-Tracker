@@ -2,7 +2,6 @@ package com.anudeep.budgetmanager.controller;
 
 import java.util.List;
 
-import org.apache.catalina.connector.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,27 +21,22 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/expenses")
 public class ExpenseController {
     
-
     private final ExpenseService expenseService;
 
-
     @PostMapping
-    public ResponseEntity<ExpenseDTO> addExpense(@RequestBody ExpenseDTO dto){
-        ExpenseDTO saved=expenseService.addExpense(dto);
+    public ResponseEntity<ExpenseDTO> addExpense(@RequestBody ExpenseDTO dto) {
+        ExpenseDTO saved = expenseService.addExpense(dto);
         return ResponseEntity.ok(saved);
-
     }
 
-
     @GetMapping
-    public ResponseEntity<List<ExpenseDTO>> getExpenses(){
-        List<ExpenseDTO> expenses=expenseService.getCurrentMonthExpensesForCurrentUser();
+    public ResponseEntity<List<ExpenseDTO>> getExpenses() {
+        List<ExpenseDTO> expenses = expenseService.getCurrentMonthExpensesForCurrentUser();
         return ResponseEntity.ok(expenses);
     }
 
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable Long id){
+    public ResponseEntity<Void> deleteExpense(@PathVariable Long id) {
         expenseService.deleteExpense(id);
         return ResponseEntity.noContent().build();
     }

@@ -7,9 +7,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/")
 public class HomeController {
-    
-    @GetMapping("/")
+
+    @GetMapping
     public String home() {
-        return "home";
+        return "Budget Manager API is running!";
     }
 }
+

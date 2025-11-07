@@ -12,38 +12,30 @@ import org.springframework.data.repository.query.Param;
 
 import com.anudeep.budgetmanager.entity.ExpenseEntity;
 
-public interface ExpenseRepository extends JpaRepository<ExpenseEntity,Long>{
-    
+public interface ExpenseRepository extends JpaRepository<ExpenseEntity, Long> {
 
-    Optional<ExpenseEntity> findById(Long id);
-
-
-    // Optional<ExpenseEntity> findByIdAndUserId(Long id, Long userId);
-    // SQL: SELECT * FROM expense_entity i
-    //      WHERE i.profile_id = :profileId
-    //      ORDER BY i.date DESC
+    // SQL: SELECT * FROM expenses WHERE profile_id = :profileId ORDER BY date DESC
     List<ExpenseEntity> findByProfileIdOrderByDateDesc(Long profileId);
 
-    // SQL: SELECT * FROM expense_entity i
-    //      WHERE i.profile_id = :profileId
-    //        AND i.date BETWEEN :startDate AND :endDate
+    // SQL: SELECT * FROM expenses WHERE profile_id = :profileId (top 5 by date)
     List<ExpenseEntity> findTop5ByProfileIdOrderByDateDesc(Long profileId);
     
     // Total (sum) of amount for a given profileId
     @Query("SELECT SUM(e.amount) FROM ExpenseEntity e WHERE e.profile.id=:profileId")
     BigDecimal findTotalExpenseByProfileId(@Param("profileId") Long profileId);
     
-    // List<ExpenseEntity> findByProfileIdAndDateBetweenContainingIgnoreCase(Long profileId, LocalDate startDate, LocalDate endDate,String keyword,Sort sort);
-    // Corrected method name
-List<ExpenseEntity> findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(
-    Long profileId,
-    LocalDate startDate,
-    LocalDate endDate,
-    String keyword, // Renamed for clarity
-    Sort sort
-);
-    List<ExpenseEntity> findByProfileIdAndDateBetween(Long profileId,LocalDate startDate,LocalDate endDate);
+    // SQL: SELECT * FROM expenses WHERE profile_id = :profileId AND date BETWEEN :startDate AND :endDate AND name CONTAINS :keyword
+    List<ExpenseEntity> findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(
+        Long profileId,
+        LocalDate startDate,
+        LocalDate endDate,
+        String keyword,
+        Sort sort
+    );
 
+    // SQL: SELECT * FROM expenses WHERE profile_id = :profileId AND date BETWEEN :startDate AND :endDate
+    List<ExpenseEntity> findByProfileIdAndDateBetween(Long profileId, LocalDate startDate, LocalDate endDate);
 
-    List<ExpenseEntity> findByProfileIdAndDate(Long profileId,LocalDate date);
+    // SQL: SELECT * FROM expenses WHERE profile_id = :profileId AND date = :date
+    List<ExpenseEntity> findByProfileIdAndDate(Long profileId, LocalDate date);
 }

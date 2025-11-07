@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.anudeep.budgetmanager.dto.ExpenseDTO;
 import com.anudeep.budgetmanager.dto.IncomeDTO;
-import com.anudeep.budgetmanager.service.ExpenseService;
 import com.anudeep.budgetmanager.service.IncomeService;
 
 import lombok.RequiredArgsConstructor;
@@ -23,27 +21,23 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/incomes")
 public class IncomeController {
     
-
     private final IncomeService incomeService;
 
-
     @PostMapping
-    public ResponseEntity<IncomeDTO> addIncome(@RequestBody IncomeDTO dto){
-        IncomeDTO saved=incomeService.addIncome(dto);
+    public ResponseEntity<IncomeDTO> addIncome(@RequestBody IncomeDTO dto) {
+        IncomeDTO saved = incomeService.addIncome(dto);
         return ResponseEntity.ok(saved);
-
     }
 
     @GetMapping
-    public ResponseEntity<List<IncomeDTO>> getExpenses(){
-        List<IncomeDTO> expenses=incomeService.getCurrentMonthIncomesForCurrentUser();
-        return ResponseEntity.ok(expenses);
+    public ResponseEntity<List<IncomeDTO>> getIncomes() {  // ✅ FIXED: Changed from getExpenses() to getIncomes()
+        List<IncomeDTO> incomes = incomeService.getCurrentMonthIncomesForCurrentUser();
+        return ResponseEntity.ok(incomes);
     }
 
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable Long id){
-        incomeService.deleteExpense(id);
+    public ResponseEntity<Void> deleteIncome(@PathVariable Long id) {  // ✅ FIXED: Changed from deleteExpense() to deleteIncome()
+        incomeService.deleteIncome(id);
         return ResponseEntity.noContent().build();
     }
 }

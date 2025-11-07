@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.anudeep.budgetmanager.dto.AuthDTO;
 import com.anudeep.budgetmanager.dto.ProfileDTO;
 import com.anudeep.budgetmanager.service.ProfileService;
-//Start
+//Starting
 import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController

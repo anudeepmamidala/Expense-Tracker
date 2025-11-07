@@ -1,15 +1,14 @@
 package com.anudeep.budgetmanager.service;
 
-import java.math.BigDecimal; // Import added
-import java.time.LocalDate; // Import added
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.anudeep.budgetmanager.dto.ExpenseDTO; // Import added
-import com.anudeep.budgetmanager.entity.ExpenseEntity;
+import com.anudeep.budgetmanager.dto.ExpenseDTO;
 import com.anudeep.budgetmanager.entity.ProfileEntity;
 import com.anudeep.budgetmanager.repository.ProfileRepository;
 
@@ -25,28 +24,29 @@ public class NotificationService {
     private final EmailService emailService;
     private final ExpenseService expenseService;
 
-    @Value("${expense.manager.frontend.url}")
-    private String frontendurl;
+    @Value("${expense.manager.frontend.url}")  // ✅ FIXED: Use config
+    private String frontendUrl;
 
-    @Scheduled(cron = "0 0 22 * * *",zone = "IST")
-    public void sendDailyIncomeExpenseRemainder(){
+    // ✅ FIXED: Changed from "IST" to "Asia/Kolkata" (standard timezone format)
+    @Scheduled(cron = "0 0 22 * * *", zone = "Asia/Kolkata")
+    public void sendDailyIncomeExpenseReminder() {
+        log.info("Job started: SendDailyIncomeExpenseReminder");
+        List<ProfileEntity> profiles = profileRepository.findAll();
+        for (ProfileEntity profile : profiles) {
+            String body = "Hi " + profile.getFullname() + ",<br><br>"
+                + "This is a friendly reminder to log your daily income or expenses.<br>"
+                + "Keeping your finances up-to-date helps you stay on budget!<br><br>"
+                + "Click here to add a new transaction:<br>"
+                + "<a href=\"" + frontendUrl + "\">" + frontendUrl + "</a><br><br>"
+                + "Best,<br>"
+                + "The Budget Manager Team";
 
-        log.info("Job started:SendDailyIncomeExpenseRemainder");
-        List<ProfileEntity> profiles=profileRepository.findAll();
-        for(ProfileEntity profile: profiles){
-            String body = "Hi"+profile.getFullname()+",<br><br>"
-                            + "This is a friendly reminder to log your daily income or expenses.<br>"
-                                + "Keeping your finances up-to-date helps you stay on budget!<br><br>"
-                                + "Click here to add a new transaction:<br>"
-                                + "<a href=\"" + frontendurl + "\">" + frontendurl + "</a><br><br>"
-                                + "Best,<br>"
-                                + "The Budget Manager Team";
-
-            emailService.sendEmail(profile.getEmail(), "Daily Remainder:Add your income and expenses", body);
-
-
+            emailService.sendEmail(profile.getEmail(), "Daily Reminder: Add your income and expenses", body);
         }
+        log.info("Job finished: SendDailyIncomeExpenseReminder");
     }
+
+    // ✅ FIXED: Timezone format consistent
     @Scheduled(cron = "0 0 22 * * *", zone = "Asia/Kolkata")
     public void sendDailyExpenseSummary() {
         log.info("Job started: sendDailyExpenseSummary");
@@ -55,7 +55,6 @@ public class NotificationService {
 
         for (ProfileEntity profile : profiles) {
             try {
-                
                 List<ExpenseDTO> todaysExpenses = expenseService.getExpensesForUserOnDate(profile.getId(), today);
                 
                 StringBuilder body = new StringBuilder();
@@ -68,7 +67,6 @@ public class NotificationService {
                 } else {
                     BigDecimal total = BigDecimal.ZERO;
                     
-                    // --- UPDATED 2-COLUMN TABLE ---
                     String tableStyle = "style='width: 100%; max-width: 400px; border-collapse: collapse; font-family: Arial, sans-serif;'";
                     String thStyle = "style='background-color: #4CAF50; color: white; padding: 12px; text-align: left; border-bottom: 1px solid #ddd;'";
                     String tdStyle = "style='padding: 10px; border-bottom: 1px solid #ddd;'";
@@ -91,18 +89,16 @@ public class NotificationService {
                         total = total.add(expense.getAmount());
                     }
 
-                    // Footer row for the total
                     body.append("</tbody><tfoot>");
                     body.append("<tr>");
-                    body.append("<td ").append(totalRowStyle).append(">Total:</td>"); // 👈 Updated colspan to 1 (implied)
+                    body.append("<td ").append(totalRowStyle).append(">Total:</td>");
                     body.append("<td ").append(totalRowStyle).append(" align='right'>").append(total.toString()).append("</td>");
                     body.append("</tr>");
                     body.append("</tfoot></table><br>");
-                    // --- END OF UPDATED TABLE ---
                 }
 
                 body.append("You can view more details or add new transactions here:<br>");
-                body.append("<a href=\"").append(frontendurl).append("\">").append(frontendurl).append("</a><br><br>");
+                body.append("<a href=\"").append(frontendUrl).append("\">").append(frontendUrl).append("</a><br><br>");
                 body.append("Best,<br>");
                 body.append("The Budget Manager Team");
 

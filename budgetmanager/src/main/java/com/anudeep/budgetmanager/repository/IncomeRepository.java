@@ -12,36 +12,27 @@ import org.springframework.data.repository.query.Param;
 
 import com.anudeep.budgetmanager.entity.IncomeEntity;
 
-public interface IncomeRepository extends JpaRepository<IncomeEntity,Long>{
+public interface IncomeRepository extends JpaRepository<IncomeEntity, Long> {
 
-
-    Optional<IncomeEntity> findById(Long id);
-
-
-    // Optional<IncomeEntity> findByIdAndUserId(Long id, Long userId);
-    // SQL: SELECT * FROM income_entity i
-    //      WHERE i.profile_id = :profileId
-    //      ORDER BY i.date DESC
+    // SQL: SELECT * FROM incomes WHERE profile_id = :profileId ORDER BY date DESC
     List<IncomeEntity> findByProfileIdOrderByDateDesc(Long profileId);
 
-    // SQL: SELECT * FROM income_entity i
-    //      WHERE i.profile_id = :profileId
-    //        AND i.date BETWEEN :startDate AND :endDate
+    // SQL: SELECT * FROM incomes WHERE profile_id = :profileId (top 5 by date)
     List<IncomeEntity> findTop5ByProfileIdOrderByDateDesc(Long profileId);
     
-    // Total (sum) of amount for a given profileId
-    @Query("SELECT SUM(e.amount) FROM ExpenseEntity e WHERE e.profile.id=:profileId")
-    BigDecimal findTotalExpenseByProfileId(@Param("profileId") Long profileId);
+    // Total (sum) of amount for a given profileId - FIXED: was querying ExpenseEntity
+    @Query("SELECT SUM(i.amount) FROM IncomeEntity i WHERE i.profile.id=:profileId")
+    BigDecimal findTotalIncomeByProfileId(@Param("profileId") Long profileId);
     
-    // List<IncomeEntity> findByProfileIdAndDateBetweenContainingIgnoreCase(Long profileId, LocalDate startDate, LocalDate endDate,String keyword,Sort sort);
+    // SQL: SELECT * FROM incomes WHERE profile_id = :profileId AND date BETWEEN :startDate AND :endDate AND name CONTAINS :keyword
+    List<IncomeEntity> findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(
+        Long profileId,
+        LocalDate startDate,
+        LocalDate endDate,
+        String keyword,
+        Sort sort
+    );
 
-    // Corrected method name
-List<IncomeEntity> findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(
-    Long profileId,
-    LocalDate startDate,
-    LocalDate endDate,
-    String keyword, // Renamed for clarity
-    Sort sort
-);
-    List<IncomeEntity> findByProfileIdAndDateBetween(Long profileId,LocalDate startDate,LocalDate endDate);
-} 
+    // SQL: SELECT * FROM incomes WHERE profile_id = :profileId AND date BETWEEN :startDate AND :endDate
+    List<IncomeEntity> findByProfileIdAndDateBetween(Long profileId, LocalDate startDate, LocalDate endDate);
+}

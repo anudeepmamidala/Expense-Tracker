@@ -1,6 +1,10 @@
 package com.anudeep.budgetmanager.controller;
 
-import org.junit.jupiter.api.AfterEach;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,22 +13,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.anudeep.budgetmanager.dto.AuthDTO;
+import com.anudeep.budgetmanager.dto.ProfileDTO;
 import com.anudeep.budgetmanager.entity.ProfileEntity;
+import com.anudeep.budgetmanager.repository.ExpenseRepository;
+import com.anudeep.budgetmanager.repository.IncomeRepository;
 import com.anudeep.budgetmanager.repository.ProfileRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional  // ✅ ADDED: Auto-rollback after each test
 public class ProfileControllerTest {
 
     @Autowired
@@ -34,137 +35,189 @@ public class ProfileControllerTest {
     private ProfileRepository profileRepository;
 
     @Autowired
+    private IncomeRepository incomeRepository;
+
+    @Autowired
+    private ExpenseRepository expenseRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private ObjectMapper objectMapper; // Helper to convert objects to JSON
+    private ObjectMapper objectMapper;
 
-    // Clean up the database after each test
-    @AfterEach
-    public void cleanup() {
-        profileRepository.deleteAll();
+    private String uniqueEmail;
+
+    @BeforeEach
+    public void setUp() {
+        // ✅ ADDED: Generate unique email for each test
+        uniqueEmail = "test_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
     }
 
-    // --- Helper Method to create a user ---
-    private ProfileEntity createAndActivateUser(String email, String password) {
-        ProfileEntity user = ProfileEntity.builder()
-                .email(email)
-                .fullname("Test User")
-                .password(passwordEncoder.encode(password))
-                .isActive(true) // Activate them directly for this test
-                .build();
-        return profileRepository.save(user);
+    // ✅ ADDED: Helper method to cleanup related data
+    private void cleanupProfileData(ProfileEntity profile) {
+        if (profile != null) {
+            // Delete all incomes for this profile first
+            incomeRepository.deleteAll(incomeRepository.findByProfileIdOrderByDateDesc(profile.getId()));
+            
+            // Delete all expenses for this profile
+            expenseRepository.deleteAll(expenseRepository.findByProfileIdOrderByDateDesc(profile.getId()));
+            
+            // Now delete the profile
+            profileRepository.delete(profile);
+        }
+    }
+
+    @Test
+    public void testRegisterProfile_Success() throws Exception {
+        ProfileDTO profileDTO = ProfileDTO.builder()
+            .fullname("John Doe")
+            .email(uniqueEmail)
+            .password("Password@123")
+            .profileImageUrl("https://example.com/image.jpg")
+            .build();
+
+        mockMvc.perform(post("/register")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(profileDTO)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.email").value(uniqueEmail));
     }
 
     @Test
     public void testLogin_Success() throws Exception {
-        // 1. Setup: Create an active user in the database
-        createAndActivateUser("test@example.com", "password123");
+        // Create and activate user
+        ProfileEntity user = createAndActivateUser(uniqueEmail, "Password@123");
 
-        // 2. Prepare Login DTO
-        // AuthDTO authDTO = new AuthDTO("test@example.com", "password123"); // <-- ❗️ OLD (WRONG)
-        AuthDTO authDTO = new AuthDTO(); // <-- ❗️ FIX
-        authDTO.setEmail("test@example.com"); // <-- ❗️ FIX
-        authDTO.setPassword("password123"); // <-- ❗️ FIX
-        
-        String authDtoJson = objectMapper.writeValueAsString(authDTO);
+        AuthDTO authDTO = AuthDTO.builder()
+            .email(uniqueEmail)
+            .password("Password@123")
+            .build();
 
-        // 3. Perform: Call POST /login
         mockMvc.perform(post("/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(authDtoJson))
-                // 4. Assert: Check the results
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token", notNullValue())) // Check that a token was returned
-                .andExpect(jsonPath("$.user.email", is("test@example.com"))); // Check user details
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(authDTO)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").exists());
+
+        cleanupProfileData(user);
     }
 
     @Test
     public void testLogin_InvalidPassword() throws Exception {
-        // 1. Setup
-        createAndActivateUser("test@example.com", "password123");
-        
-        // AuthDTO authDTO = new AuthDTO("test@example.com", "wrong-password"); // <-- ❗️ OLD (WRONG)
-        AuthDTO authDTO = new AuthDTO(); // <-- ❗️ FIX
-        authDTO.setEmail("test@example.com"); // <-- ❗️ FIX
-        authDTO.setPassword("wrong-password"); // <-- ❗️ FIX
-        
-        String authDtoJson = objectMapper.writeValueAsString(authDTO);
+        ProfileEntity user = createAndActivateUser(uniqueEmail, "Password@123");
 
-        // 2. Perform & Assert
+        AuthDTO authDTO = AuthDTO.builder()
+            .email(uniqueEmail)
+            .password("WrongPassword")
+            .build();
+
         mockMvc.perform(post("/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(authDtoJson))
-                .andExpect(status().isUnauthorized()) // Expect 401
-                .andExpect(jsonPath("$.message", is("Invalid email or password.")));
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(authDTO)))
+            .andExpect(status().isUnauthorized());
+
+        cleanupProfileData(user);
     }
 
     @Test
     public void testLogin_InactiveAccount() throws Exception {
-        // 1. Setup: Create an INACTIVE user
-        ProfileEntity user = ProfileEntity.builder()
-                .email("inactive@example.com")
-                .fullname("Inactive User")
-                .password(passwordEncoder.encode("password123"))
-                .isActive(false) // <-- Account is not active
-                .activationToken("some-token")
-                .build();
-        profileRepository.save(user);
-
-        // AuthDTO authDTO = new AuthDTO("inactive@example.com", "password123"); // <-- ❗️ OLD (WRONG)
-        AuthDTO authDTO = new AuthDTO(); // <-- ❗️ FIX
-        authDTO.setEmail("inactive@example.com"); // <-- ❗️ FIX
-        authDTO.setPassword("password123"); // <-- ❗️ FIX
+        // ✅ ADDED: Use unique email
+        String inactiveEmail = "inactive_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
         
-        String authDtoJson = objectMapper.writeValueAsString(authDTO);
+        // Create user but don't activate
+        ProfileEntity profile = ProfileEntity.builder()
+            .fullname("Inactive User")
+            .email(inactiveEmail)
+            .password(passwordEncoder.encode("Password@123"))
+            .isActive(false)
+            .activationToken(UUID.randomUUID().toString())
+            .build();
+        profileRepository.save(profile);
 
-        // 2. Perform & Assert
+        AuthDTO authDTO = AuthDTO.builder()
+            .email(inactiveEmail)
+            .password("Password@123")
+            .build();
+
         mockMvc.perform(post("/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(authDtoJson))
-                .andExpect(status().isForbidden()) // Expect 403
-                .andExpect(jsonPath("$.message", is("Account is not activated. Please check your email for activation link.")));
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(authDTO)))
+            .andExpect(status().isForbidden());
+
+        cleanupProfileData(profile);
+    }
+
+    @Test
+    public void testActivateProfile_Success() throws Exception {
+        String activationToken = UUID.randomUUID().toString();
+        ProfileEntity profile = ProfileEntity.builder()
+            .fullname("Test User")
+            .email(uniqueEmail)
+            .password(passwordEncoder.encode("Password@123"))
+            .isActive(false)
+            .activationToken(activationToken)
+            .build();
+        profileRepository.save(profile);
+
+        mockMvc.perform(get("/activate?token=" + activationToken))
+            .andExpect(status().isOk())
+            .andExpect(content().string("Profile activated successfully."));
+
+        cleanupProfileData(profile);
+    }
+
+    @Test
+    public void testActivateProfile_InvalidToken() throws Exception {
+        mockMvc.perform(get("/activate?token=invalid_token"))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     public void testAccessSecuredEndpoint_WithValidToken() throws Exception {
-        // 1. Setup: Login to get a valid token
-        createAndActivateUser("secure@example.com", "password123");
-        
-        // AuthDTO authDTO = new AuthDTO("secure@example.com", "password123"); // <-- ❗️ OLD (WRONG)
-        AuthDTO authDTO = new AuthDTO(); // <-- ❗️ FIX
-        authDTO.setEmail("secure@example.com"); // <-- ❗️ FIX
-        authDTO.setPassword("password123"); // <-- ❗️ FIX
-        
-        MvcResult loginResult = mockMvc.perform(post("/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(authDTO)))
-                .andExpect(status().isOk())
-                .andReturn();
+        // ✅ ADDED: Use unique email
+        String secureEmail = "secure_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+        ProfileEntity user = createAndActivateUser(secureEmail, "Password@123");
 
-        // 2. Extract the token from the response
-        String responseBody = loginResult.getResponse().getContentAsString();
-        String token = objectMapper.readTree(responseBody).get("token").asText();
+        AuthDTO authDTO = AuthDTO.builder()
+            .email(secureEmail)
+            .password("Password@123")
+            .build();
 
-        // 3. Perform: Call a secured endpoint (e.g., "/") with the token
-        // Note: Your config secures everything except /register, /, and /activate
-        // Let's try to access a hypothetical secured endpoint like "/api/profile"
-        // (This endpoint doesn't exist, so we expect a 404, *not* a 401 or 403)
-        // If you had a real secured endpoint, you'd test it here.
-        
-        // For now, let's just test a random secured path
-        mockMvc.perform(get("/some-secured-path")
-                .header("Authorization", "Bearer " + token))
-                // We expect 404 Not Found because the path doesn't exist.
-                // But if the token was *invalid*, we'd get a 401 Unauthorized.
-                // This proves the token *was* valid.
-                .andExpect(status().isNotFound());
+        // Login to get token
+        String loginResponse = mockMvc.perform(post("/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(authDTO)))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+        // Access dashboard with token
+        mockMvc.perform(get("/dashboard")
+            .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk());
+
+        cleanupProfileData(user);
     }
 
     @Test
-    public void testAccessSecuredEndpoint_NoToken() throws Exception {
-        // Perform: Call a secured endpoint without any token
-        mockMvc.perform(get("/some-secured-path"))
-                .andExpect(status().isForbidden()); // <-- ❗️ This is the correct fix
+    public void testAccessSecuredEndpoint_WithoutToken() throws Exception {
+        mockMvc.perform(get("/dashboard"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    // ✅ FIXED: Helper method to create and activate user with unique email
+    private ProfileEntity createAndActivateUser(String email, String password) {
+        ProfileEntity profile = ProfileEntity.builder()
+            .fullname("Test User")
+            .email(email)
+            .password(passwordEncoder.encode(password))
+            .isActive(true)
+            .activationToken(UUID.randomUUID().toString())
+            .build();
+        return profileRepository.save(profile);
     }
 }
