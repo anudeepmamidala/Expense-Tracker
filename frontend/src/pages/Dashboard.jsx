@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Alert, Spinner, Table } from 'react-bootstrap';
+import { Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
@@ -41,6 +42,36 @@ export const Dashboard = () => {
   const totalExpense = dashboard?.latestExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
   const balance = totalIncome - totalExpense;
 
+  // Income by Category data for pie chart
+  const incomeByCategory = {};
+  dashboard?.latestIncomes?.forEach((income) => {
+    incomeByCategory[income.categoryName] = (incomeByCategory[income.categoryName] || 0) + income.amount;
+  });
+  const incomePieData = Object.entries(incomeByCategory).map(([name, value]) => ({
+    name,
+    value: parseFloat(value.toFixed(2)),
+  }));
+
+  // Expense by Category data for pie chart
+  const expenseByCategory = {};
+  dashboard?.latestExpenses?.forEach((expense) => {
+    expenseByCategory[expense.categoryName] = (expenseByCategory[expense.categoryName] || 0) + expense.amount;
+  });
+  const expensePieData = Object.entries(expenseByCategory).map(([name, value]) => ({
+    name,
+    value: parseFloat(value.toFixed(2)),
+  }));
+
+  // Overall Income vs Expense data
+  const overallData = [
+    { name: 'Income', value: parseFloat(totalIncome.toFixed(2)) },
+    { name: 'Expense', value: parseFloat(totalExpense.toFixed(2)) },
+  ];
+
+  const COLORS_INCOME = ['#198754', '#20c997', '#51cf66', '#94d82d', '#ffd43b'];
+  const COLORS_EXPENSE = ['#dc3545', '#fd7e14', '#ff6b6b', '#ff8787', '#ffa8a8'];
+  const COLORS_OVERALL = ['#198754', '#dc3545'];
+
   return (
     <Layout>
       <h2 className="mb-4">Welcome, {user?.fullname}! 👋</h2>
@@ -79,46 +110,115 @@ export const Dashboard = () => {
         </Col>
       </Row>
 
-      {/* Recent Transactions */}
-      <Card className="border-0 shadow-sm">
-        <Card.Header className="bg-light">
-          <h5 className="mb-0">📝 Recent Transactions</h5>
-        </Card.Header>
-        <Card.Body>
-          {dashboard?.recentTransactions && dashboard.recentTransactions.length > 0 ? (
-            <div className="table-responsive">
-              <Table hover className="mb-0">
-                <thead>
-                  <tr>
-                    <th>Type</th>
-                    <th>Name</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboard.recentTransactions.slice(0, 10).map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td>
-                        <span className={`badge ${transaction.type === 'INCOME' ? 'bg-success' : 'bg-danger'}`}>
-                          {transaction.type}
-                        </span>
-                      </td>
-                      <td>{transaction.icon} {transaction.name}</td>
-                      <td className={transaction.type === 'INCOME' ? 'text-success' : 'text-danger'}>
-                        ₹{transaction.amount.toFixed(2)}
-                      </td>
-                      <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          ) : (
-            <p className="text-muted">No transactions yet</p>
-          )}
-        </Card.Body>
-      </Card>
+      {/* Pie Charts */}
+      <Row className="mb-4 g-3">
+        {/* Income by Category Pie Chart */}
+        <Col lg={6}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-light">
+              <h5 className="mb-0">💵 Income Breakdown</h5>
+            </Card.Header>
+            <Card.Body>
+              {incomePieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={incomePieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ₹${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {incomePieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `₹${value}`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-muted text-center">No income data available</p>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* Expense by Category Pie Chart */}
+        <Col lg={6}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-light">
+              <h5 className="mb-0">💸 Expense Breakdown</h5>
+            </Card.Header>
+            <Card.Body>
+              {expensePieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={expensePieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ₹${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {expensePieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `₹${value}`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-muted text-center">No expense data available</p>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Overall Income vs Expense */}
+      <Row>
+        <Col lg={6} className="mx-auto">
+          <Card className="border-0 shadow-sm">
+            <Card.Header className="bg-light">
+              <h5 className="mb-0">💰 Income vs Expense</h5>
+            </Card.Header>
+            <Card.Body>
+              {overallData.some(item => item.value > 0) ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={overallData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ₹${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {overallData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS_OVERALL[index % COLORS_OVERALL.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `₹${value}`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-muted text-center">No transaction data available</p>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
     </Layout>
   );
 };
