@@ -462,3 +462,17 @@ html[data-bs-theme='dark'] .text-muted {
 html[data-bs-theme='dark'] .bg-light {
   background-color: #2a3554 !important;
 }
+/* ========== Responsive Design ========== */
+@media (max-width: 991px) {
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  /* existing styles */
+}
