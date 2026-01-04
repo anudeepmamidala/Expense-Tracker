@@ -35,9 +35,3 @@ Users can register, log in, add/edit/delete expenses, and view a dynamic list of
 
 ---
 
-## 🚀 Project Structure
-
-Expense-Tracker/ 
-├── backend/ # Spring Boot REST API 
-├── frontend/ # React application 
-└── README.md ---
