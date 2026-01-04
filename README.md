@@ -5,11 +5,6 @@ Users can register, log in, add/edit/delete expenses, and view a dynamic list of
 
 ---
 
-## 🔖 Live Demo (if deployed)
-Add your live frontend URL here (optional)
-
----
-
 ## 🧠 Features
 
 - 🔐 User authentication & session management  
@@ -42,3 +37,7 @@ Add your live frontend URL here (optional)
 
 ## 🚀 Project Structure
 
+Expense-Tracker/ 
+├── backend/ # Spring Boot REST API 
+├── frontend/ # React application 
+└── README.md ---
